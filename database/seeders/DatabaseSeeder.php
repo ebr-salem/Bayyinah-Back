@@ -2,24 +2,27 @@
 
 namespace Database\Seeders;
 
+use App\Models\GlobalSetting;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        User::query()->firstOrCreate(
+            ['email' => env('SUPER_ADMIN_EMAIL', 'superadmin@ertiqaa.com')],
+            [
+                'name' => env('SUPER_ADMIN_NAME', 'Super Admin'),
+                'password' => env('SUPER_ADMIN_PASSWORD', 'superadmin'),
+                'role' => User::ROLE_SUPER_ADMIN,
+                'is_active' => true,
+            ]
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        GlobalSetting::query()->updateOrCreate(
+            ['setting_key' => GlobalSetting::AI_MONTHLY_LIMIT_KEY],
+            ['setting_value' => env('AI_MONTHLY_LIMIT', '100')]
+        );
     }
 }
