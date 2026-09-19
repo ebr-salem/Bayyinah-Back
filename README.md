@@ -1,3 +1,88 @@
+> **Note:** This is a Laravel 13 API. For non-Docker local development, see [Laravel documentation](https://laravel.com/docs).
+
+## Deployment with Docker
+
+The repo ships with a production-ready Docker setup:
+
+- `Dockerfile` — multi-stage build (PHP 8.4 FPM + Nginx, Composer vendor, Vite assets)
+- `docker-compose.yml` — `app` (web), `queue` (worker), `db` (MySQL 8.4)
+- `nginx/default.conf` — Nginx site config (served from inside the app container)
+- `docker/entrypoint.sh` — role-aware startup (web / worker / one-off artisan)
+- `docker/php.ini` — production PHP + Opcache settings
+
+### 1. First-time deployment
+
+```bash
+# Configure the app. `docker compose` reads the Laravel `.env` for interpolation,
+# so the values below are the ones used by the stack.
+# Defaults: APP_ENV=production, APP_DEBUG=false, APP_PORT=80
+export APP_ENV=production
+export APP_DEBUG=false
+export APP_URL=https://your-domain.com
+export APP_KEY=$(php artisan key:generate --show)      # or: openssl rand -base64 32
+export SUPER_ADMIN_EMAIL=superadmin@ertiqaa.com
+export SUPER_ADMIN_PASSWORD=strong-password
+export DB_PASSWORD=strong-db-password
+export DB_ROOT_PASSWORD=strong-root-password
+```
+
+`docker compose` automatically interpolates `${VARS}` from the repository `.env`, so
+you can set these values inline too. Any variable omitted falls back to the default
+in `docker-compose.yml`.
+
+### 2. Build & start
+
+```bash
+docker compose up -d --build
+```
+
+This builds the image, starts MySQL, waits for it to be healthy, then launches the
+web container (bound to `APP_PORT`, default `80`) and one queue worker.
+Nginx + PHP-FPM run inside the single `app` container.
+
+### 3. First-run database setup (once)
+
+```bash
+# Apply migrations and seed the super admin + global settings
+docker compose run --rm app php artisan migrate --seed --force
+```
+
+Run migrations on future deploys with `docker compose run --rm app php artisan migrate --force`.
+
+### 4. Connect the FastAPI AI service
+
+The app calls the AI backend at `FASTAPI_INTERNAL_URL` (default
+`http://fastapi-service:8000`). The compose stack creates an attachable bridge
+network named `fastapi-net`. Attach the FastAPI container to it once:
+
+```bash
+docker network connect fastapi-net <fastapi-container>
+```
+
+Both containers then resolve each other by service/container name on that network.
+
+### 5. Day-to-day operations
+
+```bash
+docker compose ps                # status
+docker compose logs -f app       # app logs (nginx + php-fpm on stdout)
+docker compose logs queue        # queue worker logs
+docker compose up -d --build     # rebuild & redeploy after a code change
+docker compose exec app php artisan tinker
+docker compose exec app php artisan queue:retry all
+docker compose down              # stop (data in the db_data volume persists)
+```
+
+### Notable production settings
+
+- `SESSION_DRIVER=database`, `CACHE_STORE=database`, `QUEUE_CONNECTION=database` — no Redis required.
+- Config/routes/views are cached on boot when `APP_ENV=production`.
+- OPCache is enabled with `validate_timestamps=0` in production images.
+- Uploads limited to 25 MB (`client_max_body_size` + `upload_max_filesize`).
+- The queue worker survives via `restart: unless-stopped` and re-tries jobs 3x with a 90s timeout.
+
+## About Laravel
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">

@@ -1,0 +1,35 @@
+# VCS
+.git
+.gitignore
+
+# Local environment (never send secrets to the build context)
+.env
+.env.*
+!.env.example
+
+# Dependencies
+vendor
+node_modules
+
+# Build artifacts (rebuilt inside the Docker image)
+public/build
+
+# Storage cache & logs
+storage/*.key
+storage/logs/*
+storage/pail
+bootstrap/cache/*.php
+
+# Tests & tooling
+tests
+phpunit.xml
+.phpunit.result.cache
+.phpunit.cache
+.idea
+.vscode
+.codex
+.cursor
+
+# Misc
+*.log
+.DS_Store
