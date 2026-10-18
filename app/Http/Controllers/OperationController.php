@@ -55,6 +55,7 @@ class OperationController extends Controller
 
             $response->throw();
         } catch (Throwable $e) {
+            report($e);
             $operation->update(['status' => Operation::STATUS_FAILED]);
 
             return $this->error(
