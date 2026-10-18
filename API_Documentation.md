@@ -510,10 +510,13 @@ Settings are upserted by key.
 ```
 POST {FASTAPI_INTERNAL_URL}/process
 Content-Type: application/json
+API_KEY: {FASTAPI_API_KEY}
 Timeout: 60 seconds (synchronous)
 ```
 
-`FASTAPI_INTERNAL_URL` is configured in Laravel's `.env` (e.g. `http://fastapi-service:8000`).
+`FASTAPI_INTERNAL_URL` and `FASTAPI_API_KEY` are configured in Laravel's `.env`
+(e.g. `http://fastapi-service:8000` and `shari3a-secret-key-change-me`). The AI
+service must validate the `API_KEY` header and reject requests that do not match.
 
 ### 9.2 Request body (Laravel → FastAPI)
 

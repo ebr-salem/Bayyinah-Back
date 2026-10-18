@@ -52,6 +52,11 @@ class OperationTest extends TestCase
 
         $this->assertDatabaseHas('operations', ['status' => 'completed']);
         $this->assertDatabaseCount('ai_outputs', 1);
+
+        Http::assertSent(
+            fn ($request) => $request->url() === 'http://fastapi-service:8000/process'
+                && $request->hasHeader('API_KEY', 'test-fastapi-key')
+        );
     }
 
     public function test_operation_returns_500_and_marks_failed_on_connection_error(): void

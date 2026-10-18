@@ -14,6 +14,11 @@ return [
     |
     */
 
+    'fastapi' => [
+        'url' => env('FASTAPI_INTERNAL_URL'),
+        'key' => env('FASTAPI_API_KEY'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

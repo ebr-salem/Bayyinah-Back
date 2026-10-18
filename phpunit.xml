@@ -31,6 +31,7 @@
         <env name="DB_PASSWORD" value="h2210263"/>
         <env name="DB_URL" value=""/>
         <env name="FASTAPI_INTERNAL_URL" value="http://fastapi-service:8000"/>
+        <env name="FASTAPI_API_KEY" value="test-fastapi-key"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

@@ -46,10 +46,12 @@ class OperationController extends Controller
             'text' => $document->extracted_text,
         ];
 
-        $fastApiUrl = rtrim((string) env('FASTAPI_INTERNAL_URL'), '/').'/process';
+        $fastApiUrl = rtrim((string) config('services.fastapi.url'), '/').'/process';
 
         try {
-            $response = Http::timeout(60)->post($fastApiUrl, $payload);
+            $response = Http::timeout(60)
+                ->withHeaders(['API_KEY' => (string) config('services.fastapi.key')])
+                ->post($fastApiUrl, $payload);
 
             $response->throw();
         } catch (Throwable $e) {

@@ -12,6 +12,7 @@ x-app-env: &app-env
 
   # FastAPI AI backend (must be reachable on the shared "fastapi-net" network)
   FASTAPI_INTERNAL_URL: ${FASTAPI_INTERNAL_URL:-http://fastapi-service:8000}
+  FASTAPI_API_KEY: ${FASTAPI_API_KEY:-shari3a-secret-key-change-me}
   FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
 
   # Seeder values
