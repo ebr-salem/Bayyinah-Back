@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use Throwable;
 
 class PdfTextExtractor
 {
@@ -11,34 +13,52 @@ class PdfTextExtractor
     {
         $path = $file->getRealPath();
 
-        $process = proc_open(
-            ['pdftotext', $path, '-'],
-            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
-            $pipes
-        );
+        // 1. Try pdftotext first
+        $descriptors = [
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ];
 
-        if (! is_resource($process)) {
-            throw new RuntimeException('Unable to extract text from PDF.');
+        $process = proc_open(['pdftotext', $path, '-'], $descriptors, $pipes);
+
+        if (is_resource($process)) {
+            $text = stream_get_contents($pipes[1]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            proc_close($process);
+
+            $text = trim((string) $text, " \t\n\r\0\x0B\f");
+            if ($text !== '') {
+                return $text;
+            }
         }
 
-        $text = stream_get_contents($pipes[1]);
-        $error = stream_get_contents($pipes[2]);
+        // 2. Scanned / image-based PDF -> AI OCR Fallback
+        try {
+            $fastApiUrl = rtrim((string) config('services.fastapi.url'), '/') . '/v1/extract-text';
+            $apiKey = (string) config('services.fastapi.key');
 
-        fclose($pipes[1]);
-        fclose($pipes[2]);
+            $fileContents = file_get_contents($path);
+            $fileBase64 = base64_encode((string) $fileContents);
 
-        $exitCode = proc_close($process);
+            $response = Http::timeout(180)
+                ->withHeaders(['API_KEY' => $apiKey])
+                ->post($fastApiUrl, [
+                    'filename' => $file->getClientOriginalName() ?: 'scanned.pdf',
+                    'file_b64' => $fileBase64,
+                ]);
 
-        if ($exitCode !== 0) {
-            throw new RuntimeException('Unable to extract text from PDF: '.trim($error));
+            if ($response->successful()) {
+                $extracted = trim((string) ($response->json('extracted_text') ?? ''));
+                if ($extracted !== '') {
+                    return $extracted;
+                }
+            }
+        } catch (Throwable $e) {
+            report($e);
         }
 
-        $text = trim((string) $text, " \t\n\r\0\x0B\f");
-
-        if ($text === '') {
-            throw new RuntimeException('The PDF does not contain any extractable text.');
-        }
-
-        return $text;
+        throw new RuntimeException('The PDF does not contain any extractable text.');
     }
 }
+

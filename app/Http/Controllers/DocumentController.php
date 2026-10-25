@@ -49,7 +49,7 @@ class DocumentController extends Controller
 
     public function show(Document $document): JsonResponse
     {
-        $document->load(['uploader:id,name,email', 'operations']);
+        $document->load(['uploader:id,name,email', 'operations.aiOutput']);
 
         return $this->success($document, 'تم جلب المستند بنجاح.');
     }
