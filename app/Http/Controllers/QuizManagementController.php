@@ -12,6 +12,21 @@ class QuizManagementController extends Controller
 {
     use ApiResponse;
 
+    public function index(): JsonResponse
+    {
+        $quizzes = Quiz::query()
+            ->with([
+                'approvedVersion:id,ai_output_id',
+                'approvedVersion.aiOutput:id,operation_id',
+                'approvedVersion.aiOutput.operation:id,document_id,category,operation_type,status',
+            ])
+            ->withCount('submissions')
+            ->latest('id')
+            ->paginate(15);
+
+        return $this->success($quizzes, 'تم جلب الاختبارات بنجاح.');
+    }
+
     public function store(StoreQuizRequest $request): JsonResponse
     {
         $validated = $request->validated();

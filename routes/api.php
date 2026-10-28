@@ -27,6 +27,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('documents', DocumentController::class);
         Route::post('/operations', [OperationController::class, 'store']);
         Route::post('/approved-versions', [ApprovedVersionController::class, 'store']);
+        Route::get('/quizzes', [QuizManagementController::class, 'index']);
         Route::post('/quizzes', [QuizManagementController::class, 'store']);
         Route::get('/quizzes/{quiz}/results', [QuizManagementController::class, 'results']);
 

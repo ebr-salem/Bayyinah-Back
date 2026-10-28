@@ -341,6 +341,51 @@ Creates a **new** `ApprovedVersion` inside a DB transaction. The original `ai_ou
 
 ### 6.4 Quiz management
 
+#### `GET /quizzes` — List created quizzes (admin)
+
+**Auth:** any admin
+
+Returns a paginated list of created quizzes (15 per page), newest first. Each quiz includes its `approved_version.ai_output.operation` context (`document_id`, `category`, `operation_type`, `status`) and a `submissions_count`.
+
+**Response 200:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "current_page": 1,
+    "per_page": 15,
+    "total": 2,
+    "data": [
+      {
+        "id": 3,
+        "approved_version_id": 1,
+        "unique_token": "f3Kd...32chars",
+        "is_active": true,
+        "created_at": "...",
+        "updated_at": "...",
+        "submissions_count": 4,
+        "approved_version": {
+          "id": 1,
+          "ai_output_id": 5,
+          "ai_output": {
+            "id": 5,
+            "operation": {
+              "id": 5,
+              "document_id": 2,
+              "category": "aqeedah",
+              "operation_type": "question_generation",
+              "status": "completed"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "message": "تم جلب الاختبارات بنجاح."
+}
+```
+
 #### `POST /quizzes` — Publish a quiz from an approved version
 
 **Auth:** any admin · **Content-Type:** `application/json`
