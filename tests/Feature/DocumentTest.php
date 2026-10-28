@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\AiOutput;
+use App\Models\Document;
+use App\Models\Operation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -84,5 +87,81 @@ class DocumentTest extends TestCase
         $this->getJson('/api/v1/documents')
             ->assertOk()
             ->assertJsonPath('data.total', 1);
+    }
+
+    public function test_new_document_is_not_approved(): void
+    {
+        $this->actingAsSubAdmin();
+
+        $this->postJson('/api/v1/documents', [
+            'source_type' => 'text',
+            'text_content' => 'محتوى',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.is_approved', false);
+    }
+
+    public function test_document_becomes_approved_when_an_ai_output_is_approved(): void
+    {
+        $user = $this->actingAsSubAdmin();
+
+        $document = Document::query()->create([
+            'uploader_id' => $user->id,
+            'source_type' => 'text',
+            'extracted_text' => 'محتوى',
+        ]);
+
+        $this->getJson("/api/v1/documents/{$document->id}")
+            ->assertOk()
+            ->assertJsonPath('data.is_approved', false);
+
+        $operation = Operation::query()->create([
+            'document_id' => $document->id,
+            'category' => 'aqeedah',
+            'operation_type' => 'summarization',
+            'status' => 'completed',
+        ]);
+
+        $aiOutput = AiOutput::query()->create([
+            'operation_id' => $operation->id,
+            'raw_json' => ['summary' => 'الملخص الأصلي'],
+        ]);
+
+        $this->postJson('/api/v1/approved-versions', [
+            'ai_output_id' => $aiOutput->id,
+            'edited_content' => ['summary' => 'الملخص المعتمد'],
+        ])->assertCreated();
+
+        $this->getJson("/api/v1/documents/{$document->id}")
+            ->assertOk()
+            ->assertJsonPath('data.is_approved', true);
+
+        $this->getJson('/api/v1/documents')
+            ->assertOk()
+            ->assertJsonPath('data.data.0.id', $document->id)
+            ->assertJsonPath('data.data.0.is_approved', true);
+    }
+
+    public function test_document_is_not_approved_when_only_operations_exist(): void
+    {
+        $user = $this->actingAsSubAdmin();
+
+        $document = Document::query()->create([
+            'uploader_id' => $user->id,
+            'source_type' => 'text',
+            'extracted_text' => 'محتوى',
+        ]);
+
+        Operation::query()->create([
+            'document_id' => $document->id,
+            'category' => 'aqeedah',
+            'operation_type' => 'summarization',
+            'status' => 'completed',
+        ]);
+
+        $this->getJson('/api/v1/documents')
+            ->assertOk()
+            ->assertJsonPath('data.data.0.id', $document->id)
+            ->assertJsonPath('data.data.0.is_approved', false);
     }
 }

@@ -206,7 +206,7 @@ The frontend returns the participant's answers together with the **correct answe
 
 **Auth:** any admin
 
-Response: paginated documents, each with nested `uploader` and `operations`.
+Response: paginated documents, each with nested `uploader` and `operations`. Each document includes `is_approved` (`true` when any of its operations' AI output has an approved version).
 
 ```json
 {
@@ -219,6 +219,7 @@ Response: paginated documents, each with nested `uploader` and `operations`.
       "extracted_text": "نص الدرس...",
       "created_at": "2026-08-05T16:58:29.000000Z",
       "updated_at": "2026-08-05T16:58:29.000000Z",
+      "is_approved": false,
       "uploader": { "id": 1, "name": "Super Admin", "email": "superadmin@ertiqaa.com" },
       "operations": [
         { "id": 2, "document_id": 1, "category": "aqeedah", "operation_type": "summarization", "status": "completed" }
@@ -250,7 +251,7 @@ Response: paginated documents, each with nested `uploader` and `operations`.
 
 **Auth:** any admin
 
-Returns the document with nested `uploader` and full `operations`.
+Returns the document with nested `uploader`, full `operations`, and `is_approved`.
 
 #### `PUT /documents/{document}` — Update a document
 

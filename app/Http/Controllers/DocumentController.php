@@ -18,6 +18,7 @@ class DocumentController extends Controller
     {
         $documents = Document::query()
             ->with(['uploader:id,name,email', 'operations:id,document_id,category,operation_type,status'])
+            ->withCount(['operations as approved_operations_count' => fn ($query) => $query->whereHas('aiOutput.approvedVersions')])
             ->latest()
             ->paginate(15);
 
